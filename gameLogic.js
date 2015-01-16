@@ -3,19 +3,22 @@ var
   randomColor = require( 'randomcolor' ),
 
   stateMap = {
-    userIndex : 0,
-    users     : [],
-    timeLeft  : 0,
-    io        : {}
+    userIndex   : 0,
+    users       : [],
+    timeLeft    : 0,
+    io          : {},
+    activeStars : [],
+    gameState   : 'running' // running or intermission
   },
 
   configMap = {
     roundTime    : 45,
-    intermission : 15
+    intermission : 15,
+    tickInterval : 100
   },
 
   initModule,
-  addUser, onGameTick;
+  addUser, onGameTick, addStar;
 
 // Begin Public method /initModulel/
 // Sets up the game.
@@ -39,7 +42,7 @@ initModule = function( io ) {
     });
   });
 
-  setInterval( onGameTick, 100 );
+  setInterval( onGameTick, configMap.tickInterval );
 };
 // End Public method /initModule/
 
@@ -72,7 +75,15 @@ addUser = function( socket ) {
 
 
 // Begin Private method /onGameTick/
+//
 onGameTick = function() {
+  stateMap.timeLeft -= configMap.tickInterval / 1000.0;
+
+  if ( stateMap.timeLeft <= 0 ) {
+    stateMap.timeLeft = configMap.roundTime;
+  }
+
+  stateMap.io.emit( 'timerUpdate', stateMap.timeLeft );
 };
 // End Private method /onGameTick/
 
