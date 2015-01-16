@@ -8,7 +8,8 @@ var
     timeLeft    : 0,
     io          : {},
     activeStars : [],
-    gameState   : 'running' // running or intermission
+    gameState   : 'running', // running or intermission
+    scoreCard   : []
   },
 
   configMap = {
@@ -18,9 +19,10 @@ var
   },
 
   initModule,
-  addUser, onGameTick, addStar;
+  addUser, onGameTick, addStar,
+  colorToRgb, createScoreListing;
 
-// Begin Public method /initModulel/
+// Begin Public method /initModule/
 // Sets up the game.
 //
 initModule = function( io ) {
@@ -31,6 +33,10 @@ initModule = function( io ) {
       userId;
 
     userId = addUser( socket );
+
+    if ( stateMap.gameState === 'intermission' ) {
+      socket.emit( 'intermission', stateMap.scoreCard );
+    }
 
     socket.on( 'newStar', function( starDesc ){
       stateMap.users[ userId ].score += starDesc.score;
@@ -48,6 +54,33 @@ initModule = function( io ) {
   setInterval( onGameTick, configMap.tickInterval );
 };
 // End Public method /initModule/
+
+
+// Begin Priavte method /createScoreListing/
+//
+createScoreListing = function() {
+  var
+    listing = [];
+
+  Object.keys( stateMap.users ).forEach( function( userId ){
+    listing.push( {
+      color : colorToRgb( stateMap.users[ userId ].color ),
+      score : stateMap.users[ userId ].score
+    });
+  });
+  console.log( listing );
+
+  return listing;
+};
+// End Private method /createScoreListing/
+
+
+// Begin Private method /colorToRgb/
+//
+colorToRgb = function( color ) {
+  return 'rgb( ' + color[0] + ', ' + color[1] + ', ' + color[2] + ' )';
+};
+// End Private method /colorToRgb/
 
 
 // Begin Private method /addUser/
@@ -86,9 +119,11 @@ onGameTick = function() {
   if ( stateMap.timeLeft <= 0 ) {
     switch ( stateMap.gameState ){
       case 'running':
+        stateMap.scoreCard = createScoreListing();
+
         stateMap.gameState = 'intermission';
         stateMap.timeLeft  = configMap.intermissionInterval;
-        stateMap.io.emit( 'intermission', {} );
+        stateMap.io.emit( 'intermission', stateMap.scoreCard );
         break;
 
       case 'intermission':

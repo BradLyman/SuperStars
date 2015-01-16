@@ -23,12 +23,13 @@ var superStars = (function() {
     },
 
     stateMap = {
-      stars         : [],
-      userColor     : [255, 255, 255],
-      starIndex     : 0,
-      socket        : {},
-      myp5          : {},
-      prevFrameTime : 0,
+      isIntermission : false,
+      stars          : [],
+      userColor      : [255, 255, 255],
+      starIndex      : 0,
+      socket         : {},
+      myp5           : {},
+      prevFrameTime  : 0,
       jqueryMap  : {
         $timer : {},
         $score : {}
@@ -191,15 +192,33 @@ var superStars = (function() {
   // ---------------------- BEGIN DOM METHODS -----------------------
   // Begin DOM method /showIntermission/
   //
-  showIntermission = function() {
-    $('body').append( $('<div class="intermission">').text( 'intermission' ) );
+  showIntermission = function( scoreInformation ) {
+    var
+      userList = $('<ul>');
+
+    scoreInformation.forEach( function( record ){
+      var userDisplay = $('<li>');
+
+      userDisplay.append(
+        $('<p>').text( " Scored: " + record.score ).prepend(
+          $('<span class="playerBox">').text( ' - >' )
+            .css( 'background-color', record.color )
+        )
+      );
+
+      userList.append( userDisplay );
+    });
+
+    $('.container').append( $('<div class="overlay">').append(
+      $('<div>').append( userList )
+    ));
   };
   // End DOM method /showIntermission/
 
   // Begin DOM method /hideIntermission/
   //
   hideIntermission = function() {
-    $('.intermission').remove();
+    $('.overlay').remove();
   };
   // End DOM method /hideIntermission/
 
@@ -246,11 +265,14 @@ var superStars = (function() {
       stateMap.jqueryMap.$timer.text( time.toFixed(1) );
     });
 
-    socket.on( 'intermission', function(){
-      showIntermission();
+    socket.on( 'intermission', function( listing ){
+      stateMap.isIntermission = true;
+
+      showIntermission( listing );
     });
 
     socket.on( 'gameStart', function(){
+      stateMap.isIntermission = false;
       hideIntermission();
     });
   };
@@ -320,6 +342,10 @@ var superStars = (function() {
         star   = createStar( coords.x, coords.y ),
         score  = calculateStarScore( coords.x, coords.y );
 
+      if ( stateMap.isIntermission ) {
+        return true;
+      }
+
       stateMap.socket.emit( 'newStar', {
         star  : star,
         score : score
@@ -334,6 +360,10 @@ var superStars = (function() {
         coords = getNormalizedTouchCoords(),
         star   = createStar( coords.x, coords.y ),
         score  = calculateStarScore( coords.x, coords.y );
+
+      if ( stateMap.isIntermission ) {
+        return true;
+      }
 
       stateMap.socket.emit( 'newStar', {
         star  : star,
