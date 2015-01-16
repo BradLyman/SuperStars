@@ -32,8 +32,8 @@ initModule = function( io ) {
 
     userId = addUser( socket );
 
-    socket.on( 'newPoint', function( point ){
-      socket.broadcast.emit( 'newPoint', point );
+    socket.on( 'newStar', function( star ){
+      socket.broadcast.emit( 'newStar', star );
     });
 
     socket.on( 'disconnect', function() {

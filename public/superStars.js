@@ -17,14 +17,15 @@ var superStars = (function() {
   var
     configMap = {
       outerStarRadius : window.innerWidth / 15,
-      pointFadeOutStepTime : 100,
-      pointFateOutRate : 0.05
+      starFadeOutStepTime : 100,
+      starFateOutRate : 0.05
     },
 
     stateMap = {
-      points        : {},
+      enemyStars    : [],
+      playerStars   : [],
       userColor     : [255, 255, 255],
-      pointIndex    : 0,
+      starIndex    : 0,
       socket        : {},
       myp5          : {},
       prevFrameTime : 0,
@@ -33,9 +34,11 @@ var superStars = (function() {
       },
     },
 
-    initModule,
     p5Sketch,
-    createPoint, getRandomInt, addPoint, drawStar, updatePoints,
+    createStar, getRandomInt, addPlayerStar, addEnemyStar,
+    drawStar, updateStars,
+
+    initModule,
     createTimer, hideIntermission, showIntermission,
     setSocketEventHandlers;
   // ------------------ END MODULE SCOPE VARIABLES ------------------
@@ -49,9 +52,9 @@ var superStars = (function() {
   };
   // End Utility method /getRandomInt/
 
-  // Begin Utility method /createPoint/
+  // Begin Utility method /createStar/
   //
-  createPoint = function( x, y ){
+  createStar = function( x, y ){
     return {
       x           : x,
       y           : y,
@@ -67,68 +70,92 @@ var superStars = (function() {
       )
     };
   };
-  // End Utility method /createPoint/
+  // End Utility method /createStar/
 
-  // Begin Utility method /addPoint/
-  // Purpose : Adds a point to the stateMap.points array.
+  // Begin Utility method /addPlayerStar/
   //
-  addPoint = function( point ){
-    var index = stateMap.pointIndex;
+  addPlayerStar = function( star ){
+    var index = stateMap.starIndex;
 
-    stateMap.points[ index ] = point;
+    stateMap.playerStars[ index ] = star;
 
-     stateMap.pointIndex += 1;
+    stateMap.starIndex += 1;
   };
-  // End Utility method /addPoint/
+  // End Utility method /addPlayerStar/
 
-  // Begin Utility method /updatePoints/
-  // Update point animations and remove dead points.
+  // Begin Utility method /addEnemyStar/
   //
-  updatePoints = function( sketch ) {
+  addEnemyStar = function( star ){
+    var index = stateMap.starIndex;
+
+    stateMap.enemyStars[ index ] = star;
+
+    stateMap.starIndex += 1;
+  };
+  // End Utility method /addEnemyStar/
+
+  // Begin Utility method /updateStars/
+  // Update star animations and remove dead stars.
+  //
+  updateStars = function( sketch ) {
     var
       curTime = sketch.millis(),
       duration = (curTime - stateMap.prevFrameTime) / 1000;
 
     stateMap.prevFrameTime = curTime;
 
-    Object.keys( stateMap.points ).forEach( function( key ){
-      var point = stateMap.points[ key ];
+    Object.keys( stateMap.playerStars ).forEach( function( key ){
+      var star = stateMap.playerStars[ key ];
 
-      point.life -= duration;
+      star.life -= duration;
 
-      if ( point.life <= 2.0 ) {
-        point.scale = (point.life / 2.0);
+      if ( star.life <= 2.0 ) {
+        star.scale = (star.life / 2.0);
       }
 
-      if ( point.life <= 0.0 ) {
-        delete stateMap.points[ key ];
+      if ( star.life <= 0.0 ) {
+        delete stateMap.playerStars[ key ];
+      }
+    });
+
+    Object.keys( stateMap.enemyStars ).forEach( function( key ){
+      var star = stateMap.enemyStars[ key ];
+
+      star.life -= duration;
+
+      if ( star.life <= 2.0 ) {
+        star.scale = (star.life / 2.0);
+      }
+
+      if ( star.life <= 0.0 ) {
+        delete stateMap.enemyStars[ key ];
       }
     });
   };
-  // End Utility method /updatePoints/
+  // End Utility method /updateStars/
 
   // Begin Utility method /drawStar/
   // Purpose : use p5 to render a star under the cursor
   //
-  drawStar = function( sketch, point ){
+  drawStar = function( sketch, star ){
     var
       a, sx, sy,
-      angle = sketch.TWO_PI / point.points,
+      angle = sketch.TWO_PI / star.points,
       halfAngle = angle / 2.0;
 
     sketch.push();
-    sketch.translate( point.x * sketch.windowWidth, point.y * sketch.windowHeight );
-    sketch.scale( point.scale, point.scale );
-    sketch.fill( point.color[0], point.color[1], point.color[2] );
+    sketch.translate( star.x * sketch.windowWidth, star.y * sketch.windowHeight );
+    sketch.scale( star.scale, star.scale );
+    sketch.fill( star.color[0], star.color[1], star.color[2] );
 
     sketch.beginShape();
     for ( a = 0; a < sketch.TWO_PI; a += angle ) {
-      sx = sketch.cos( a ) * point.outerRadius;
-      sy = sketch.sin( a ) * point.outerRadius;
+      sx = sketch.cos( a ) * star.outerRadius;
+      sy = sketch.sin( a ) * star.outerRadius;
       sketch.vertex( sx, sy );
 
-      sx = sketch.cos( a + halfAngle ) * point.innerRadius;
-      sy = sketch.sin( a + halfAngle ) * point.innerRadius;
+      sx = sketch.cos( a + halfAngle ) * star.innerRadius;
+      sy = sketch.sin( a + halfAngle ) * star.innerRadius;
       sketch.vertex( sx, sy );
     }
     sketch.endShape( sketch.CLOSE );
@@ -171,8 +198,8 @@ var superStars = (function() {
       stateMap.userColor = color;
     });
 
-    socket.on( 'newPoint', function( point ){
-      addPoint( point );
+    socket.on( 'newStar', function( star ){
+      addEnemyStar( star );
     });
 
     socket.on( 'timerUpdate', function( time ){
@@ -237,34 +264,38 @@ var superStars = (function() {
     sketch.draw = function(){
       sketch.background( 240 );
 
-      updatePoints( sketch );
+      updateStars( sketch );
 
-      Object.keys( stateMap.points ).forEach( function( key ){
-        var point = stateMap.points[ key ];
+      Object.keys( stateMap.playerStars ).forEach( function( key ){
+        var star = stateMap.playerStars[ key ];
 
-        if ( point !== null ){
-          drawStar( sketch, point );
-        }
+        drawStar( sketch, star );
+      });
+
+      Object.keys( stateMap.enemyStars ).forEach( function( key ){
+        var star = stateMap.enemyStars[ key ];
+
+        drawStar( sketch, star );
       });
     };
 
     sketch.mousePressed = function() {
       var
         coords = getNormalizedMouseCoords(),
-        point  = createPoint( coords.x, coords.y );
+        star  = createStar( coords.x, coords.y );
 
-      stateMap.socket.emit( 'newPoint', point );
-      addPoint( point );
+      stateMap.socket.emit( 'newStar', star );
+      addPlayerStar( star );
       return false;
     };
 
     sketch.touchStarted = function() {
       var
         coords = getNormalizedTouchCoords(),
-        point  = createPoint( coords.x, coords.y );
+        star  = createStar( coords.x, coords.y );
 
-      stateMap.socket.emit( 'newPoint', point );
-      addPoint( point );
+      stateMap.socket.emit( 'newStar', star );
+      addPlayerStar( star );
       return false;
     };
   };
