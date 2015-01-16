@@ -12,9 +12,9 @@ var
   },
 
   configMap = {
-    roundTime    : 45,
-    intermission : 15,
-    tickInterval : 100
+    roundInterval        : 10,
+    intermissionInterval : 5,
+    tickInterval         : 100
   },
 
   initModule,
@@ -59,7 +59,7 @@ addUser = function( socket ) {
 
   stateMap.users[ id ] = {
     color : randomColor({
-      format : 'rgbArray',
+      format     : 'rgbArray',
       luminosity : 'bright'
     })
   };
@@ -80,7 +80,19 @@ onGameTick = function() {
   stateMap.timeLeft -= configMap.tickInterval / 1000.0;
 
   if ( stateMap.timeLeft <= 0 ) {
-    stateMap.timeLeft = configMap.roundTime;
+    switch ( stateMap.gameState ){
+      case 'running':
+        stateMap.gameState = 'intermission';
+        stateMap.timeLeft  = configMap.intermissionInterval;
+        stateMap.io.emit( 'intermission', {} );
+        break;
+
+      case 'intermission':
+        stateMap.gameState = 'running';
+        stateMap.timeLeft  = configMap.roundInterval;
+        stateMap.io.emit( 'gameStart', {} );
+        break;
+    }
   }
 
   stateMap.io.emit( 'timerUpdate', stateMap.timeLeft );
