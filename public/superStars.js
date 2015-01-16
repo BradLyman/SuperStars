@@ -16,16 +16,17 @@ var superStars = (function() {
   // ----------------- BEGIN MODULE SCOPE VARIABLES -----------------
   var
     configMap = {
-      outerStarRadius : window.innerWidth / 15,
+      relativeStarSize    : 1 / 15,
+      outerStarRadius     : window.innerWidth / 15,
       starFadeOutStepTime : 100,
-      starFateOutRate : 0.05
+      starFateOutRate     : 0.05
     },
 
     stateMap = {
       enemyStars    : [],
       playerStars   : [],
       userColor     : [255, 255, 255],
-      starIndex    : 0,
+      starIndex     : 0,
       socket        : {},
       myp5          : {},
       prevFrameTime : 0,
@@ -36,7 +37,7 @@ var superStars = (function() {
 
     p5Sketch,
     createStar, getRandomInt, addPlayerStar, addEnemyStar,
-    drawStar, updateStars,
+    drawStar, updateStars, calculateStarScore,
 
     initModule,
     createTimer, hideIntermission, showIntermission,
@@ -162,6 +163,36 @@ var superStars = (function() {
     sketch.pop();
   };
   // End Utility method /drawStar/
+
+  // Begin Utility method /calculateStarScore/
+  // Arguments :
+  //   x, y - normalized x and y coordinates of the center of the star
+  //
+  calculateStarScore = function( x, y ){
+    var
+      score = 0,
+      dist;
+
+    dist = function( x1, y1, x2, y2 ){
+      var
+        dx = x2 - x1,
+        dy = y2 - y1;
+
+      return Math.sqrt( dx*dx + dy*dy );
+    };
+
+    Object.keys( stateMap.enemyStars ).forEach( function( key ){
+      var star = stateMap.enemyStars[ key ];
+
+      if ( dist( x, y, star.x, star.y ) ) {
+        score += 1.0;
+      }
+    });
+
+    console.log( 'star scored: ' + score );
+    return score;
+  };
+  // End Utility method /calculateStarScore/
   // --------------------- END UTILITY METHODS ----------------------
 
 
@@ -282,7 +313,8 @@ var superStars = (function() {
     sketch.mousePressed = function() {
       var
         coords = getNormalizedMouseCoords(),
-        star  = createStar( coords.x, coords.y );
+        star   = createStar( coords.x, coords.y ),
+        score  = calculateStarScore( coords.x, coords.y );
 
       stateMap.socket.emit( 'newStar', star );
       addPlayerStar( star );
@@ -292,7 +324,8 @@ var superStars = (function() {
     sketch.touchStarted = function() {
       var
         coords = getNormalizedTouchCoords(),
-        star  = createStar( coords.x, coords.y );
+        star   = createStar( coords.x, coords.y ),
+        score  = calculateStarScore( coords.x, coords.y );
 
       stateMap.socket.emit( 'newStar', star );
       addPlayerStar( star );
