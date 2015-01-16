@@ -1,0 +1,24 @@
+{
+  "name": "stars",
+  "version": "1.0.0",
+  "description": "Simple app for drawing stars!",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.11.0",
+    "randomcolor": "^0.1.1",
+    "socket.io": "^1.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "socket.io",
+    "p5",
+    "processing",
+    "javascript"
+  ],
+  "author": "Brad Lyman",
+  "license": "MIT"
+}
