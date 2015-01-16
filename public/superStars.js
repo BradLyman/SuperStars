@@ -76,9 +76,6 @@ var superStars = (function() {
     var index = stateMap.pointIndex;
 
     stateMap.points[ index ] = point;
-    Object.keys( stateMap.points ).forEach( function( key ){
-      console.log( key );
-    });
 
      stateMap.pointIndex += 1;
   };
@@ -175,7 +172,7 @@ var superStars = (function() {
     });
 
     socket.on( 'newPoint', function( point ){
-      addPoint( point, false );
+      addPoint( point );
     });
 
     socket.on( 'timerUpdate', function( time ){
