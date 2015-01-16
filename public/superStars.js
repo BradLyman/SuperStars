@@ -22,11 +22,12 @@ var superStars = (function() {
     },
 
     stateMap = {
-      points     : {},
-      userColor  : [255, 255, 255],
-      pointIndex : 0,
-      socket     : {},
-      myp5       : {},
+      points        : {},
+      userColor     : [255, 255, 255],
+      pointIndex    : 0,
+      socket        : {},
+      myp5          : {},
+      prevFrameTime : 0,
       jqueryMap  : {
         $timer : {}
       },
@@ -34,7 +35,7 @@ var superStars = (function() {
 
     initModule,
     p5Sketch,
-    createPoint, getRandomInt, fadeOutPoint, addPoint, drawStar,
+    createPoint, getRandomInt, addPoint, drawStar, updatePoints,
     createTimer, hideIntermission, showIntermission,
     setSocketEventHandlers;
   // ------------------ END MODULE SCOPE VARIABLES ------------------
@@ -57,6 +58,7 @@ var superStars = (function() {
       points      : getRandomInt( 3, 8 ),
       color       : stateMap.userColor,
       scale       : 1.0,
+      life        : 4.0,
       innerRadius : getRandomInt(
         configMap.outerStarRadius * 0.2, configMap.outerStarRadius * 0.5
       ),
@@ -67,27 +69,6 @@ var superStars = (function() {
   };
   // End Utility method /createPoint/
 
-  // Begin Utility method /fadeOutPoint/
-  // Shrinks a point to a single dot then removes it.
-  //
-  fadeOutPoint = function( indexToFade ){
-    var point = stateMap.points[ indexToFade ];
-    if ( !point ) {
-      return;
-    }
-
-    point.scale -= configMap.pointFateOutRate;
-
-    if ( point.scale <= 0 ) {
-      stateMap.points[ indexToFade ] = null;
-    }
-
-    setTimeout( function() {
-      fadeOutPoint( indexToFade );
-    }, configMap.pointFadeOutStepTime );
-  };
-  // End Utility method /fadeOutPoint/
-
   // Begin Utility method /addPoint/
   // Purpose : Adds a point to the stateMap.points array.
   //
@@ -95,14 +76,39 @@ var superStars = (function() {
     var index = stateMap.pointIndex;
 
     stateMap.points[ index ] = point;
+    Object.keys( stateMap.points ).forEach( function( key ){
+      console.log( key );
+    });
 
-    setTimeout( function(){
-      fadeOutPoint( index );
-    }, 2000 );
-
-    stateMap.pointIndex += 1;
+     stateMap.pointIndex += 1;
   };
   // End Utility method /addPoint/
+
+  // Begin Utility method /updatePoints/
+  // Update point animations and remove dead points.
+  //
+  updatePoints = function( sketch ) {
+    var
+      curTime = sketch.millis(),
+      duration = (curTime - stateMap.prevFrameTime) / 1000;
+
+    stateMap.prevFrameTime = curTime;
+
+    Object.keys( stateMap.points ).forEach( function( key ){
+      var point = stateMap.points[ key ];
+
+      point.life -= duration;
+
+      if ( point.life <= 2.0 ) {
+        point.scale = (point.life / 2.0);
+      }
+
+      if ( point.life <= 0.0 ) {
+        delete stateMap.points[ key ];
+      }
+    });
+  };
+  // End Utility method /updatePoints/
 
   // Begin Utility method /drawStar/
   // Purpose : use p5 to render a star under the cursor
@@ -233,6 +239,8 @@ var superStars = (function() {
 
     sketch.draw = function(){
       sketch.background( 240 );
+
+      updatePoints( sketch );
 
       Object.keys( stateMap.points ).forEach( function( key ){
         var point = stateMap.points[ key ];
