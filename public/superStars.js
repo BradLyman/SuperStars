@@ -23,8 +23,7 @@ var superStars = (function() {
     },
 
     stateMap = {
-      enemyStars    : [],
-      playerStars   : [],
+      stars         : [],
       userColor     : [255, 255, 255],
       starIndex     : 0,
       socket        : {},
@@ -78,7 +77,8 @@ var superStars = (function() {
   addPlayerStar = function( star ){
     var index = stateMap.starIndex;
 
-    stateMap.playerStars[ index ] = star;
+    star.isPlayerStar = true;
+    stateMap.stars[ index ] = star;
 
     stateMap.starIndex += 1;
   };
@@ -89,7 +89,8 @@ var superStars = (function() {
   addEnemyStar = function( star ){
     var index = stateMap.starIndex;
 
-    stateMap.enemyStars[ index ] = star;
+    star.isPlayerStar = false;
+    stateMap.stars[ index ] = star;
 
     stateMap.starIndex += 1;
   };
@@ -105,8 +106,8 @@ var superStars = (function() {
 
     stateMap.prevFrameTime = curTime;
 
-    Object.keys( stateMap.playerStars ).forEach( function( key ){
-      var star = stateMap.playerStars[ key ];
+    Object.keys( stateMap.stars ).forEach( function( key ){
+      var star = stateMap.stars[ key ];
 
       star.life -= duration;
 
@@ -115,21 +116,7 @@ var superStars = (function() {
       }
 
       if ( star.life <= 0.0 ) {
-        delete stateMap.playerStars[ key ];
-      }
-    });
-
-    Object.keys( stateMap.enemyStars ).forEach( function( key ){
-      var star = stateMap.enemyStars[ key ];
-
-      star.life -= duration;
-
-      if ( star.life <= 2.0 ) {
-        star.scale = (star.life / 2.0);
-      }
-
-      if ( star.life <= 0.0 ) {
-        delete stateMap.enemyStars[ key ];
+        delete stateMap.stars[ key ];
       }
     });
   };
@@ -181,8 +168,12 @@ var superStars = (function() {
       return Math.sqrt( dx*dx + dy*dy );
     };
 
-    Object.keys( stateMap.enemyStars ).forEach( function( key ){
-      var star = stateMap.enemyStars[ key ];
+    Object.keys( stateMap.stars ).forEach( function( key ){
+      var star = stateMap.stars[ key ];
+
+      if ( star.isPlayerStar ) {
+        return;
+      }
 
       if ( dist( x, y, star.x, star.y ) ) {
         score += 1.0;
@@ -297,14 +288,8 @@ var superStars = (function() {
 
       updateStars( sketch );
 
-      Object.keys( stateMap.playerStars ).forEach( function( key ){
-        var star = stateMap.playerStars[ key ];
-
-        drawStar( sketch, star );
-      });
-
-      Object.keys( stateMap.enemyStars ).forEach( function( key ){
-        var star = stateMap.enemyStars[ key ];
+      Object.keys( stateMap.stars ).forEach( function( key ){
+        var star = stateMap.stars[ key ];
 
         drawStar( sketch, star );
       });
