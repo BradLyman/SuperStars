@@ -7,12 +7,14 @@
   <script type="text/javascript" src="p5.min.js"></script>
   <script>
     var
-      points = {},
-      socket = io(),
-      userColor = randomColor({
-        luminosity : 'bright',
-        format     : 'rgbArray'
-      });
+      points    = {},
+      socket    = io(),
+      userColor = [255, 255, 255];
+
+    socket.on( 'setUserColor', function( color ){
+      console.log( 'set user color' );
+      userColor = color;
+    });
 
     function setup() {
       createCanvas( windowWidth, windowHeight );
