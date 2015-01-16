@@ -30,7 +30,8 @@ var superStars = (function() {
       myp5          : {},
       prevFrameTime : 0,
       jqueryMap  : {
-        $timer : {}
+        $timer : {},
+        $score : {}
       },
     },
 
@@ -39,7 +40,7 @@ var superStars = (function() {
     drawStar, updateStars, calculateStarScore,
 
     initModule,
-    createTimer, hideIntermission, showIntermission,
+    createTimer, createScoreDisplay, hideIntermission, showIntermission,
     setSocketEventHandlers;
   // ------------------ END MODULE SCOPE VARIABLES ------------------
 
@@ -175,7 +176,7 @@ var superStars = (function() {
         return;
       }
 
-      if ( dist( x, y, star.x, star.y ) ) {
+      if ( dist( x, y, star.x, star.y ) < configMap.relativeStarSize ) {
         score += 1.0;
       }
     });
@@ -205,16 +206,33 @@ var superStars = (function() {
   // Begin DOM method /createTimer/
   //
   createTimer = function() {
-    $('body').append( $('<p class="timer"/>') );
+    $('body').append(
+      '<p class="timer">Time: <span class="time"/></p>'
+    );
 
-    stateMap.jqueryMap.$timer = $('.timer');
+    stateMap.jqueryMap.$timer = $('.time');
   };
   // End DOM method /createTimer/
+
+  // Begin DOM method /createScoreDisplay/
+  //
+  createScoreDisplay = function() {
+    $('body').append(
+      '<p class="score">Score: <span class="scoreValue"/></p>'
+    );
+
+    stateMap.jqueryMap.$score = $('.scoreValue');
+  };
+  // End DOM method /createScoreDisplay/
   // ----------------------- END DOM METHODS ------------------------
 
 
   // -------------------- BEGIN EVENT HANDLERS ----------------------
   setSocketEventHandlers = function( socket ){
+    socket.on( 'scoreUpdate', function( score ){
+      stateMap.jqueryMap.$score.text( score );
+    });
+
     socket.on( 'setUserColor', function( color ){
       console.log( 'set user color: ' + color );
       stateMap.userColor = color;
@@ -247,6 +265,7 @@ var superStars = (function() {
   //
   initModule = function( socket ) {
     createTimer();
+    createScoreDisplay();
 
     setSocketEventHandlers( socket );
     stateMap.socket = socket;
@@ -301,7 +320,11 @@ var superStars = (function() {
         star   = createStar( coords.x, coords.y ),
         score  = calculateStarScore( coords.x, coords.y );
 
-      stateMap.socket.emit( 'newStar', star );
+      stateMap.socket.emit( 'newStar', {
+        star  : star,
+        score : score
+      } );
+
       addPlayerStar( star );
       return false;
     };
@@ -312,7 +335,11 @@ var superStars = (function() {
         star   = createStar( coords.x, coords.y ),
         score  = calculateStarScore( coords.x, coords.y );
 
-      stateMap.socket.emit( 'newStar', star );
+      stateMap.socket.emit( 'newStar', {
+        star  : star,
+        score : score
+      });
+
       addPlayerStar( star );
       return false;
     };

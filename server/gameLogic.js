@@ -32,12 +32,15 @@ initModule = function( io ) {
 
     userId = addUser( socket );
 
-    socket.on( 'newStar', function( star ){
-      socket.broadcast.emit( 'newStar', star );
+    socket.on( 'newStar', function( starDesc ){
+      stateMap.users[ userId ].score += starDesc.score;
+
+      socket.emit( 'scoreUpdate', stateMap.users[ userId ].score );
+      socket.broadcast.emit( 'newStar', starDesc.star );
     });
 
     socket.on( 'disconnect', function() {
-      stateMap.users[ userId ] = null;
+      delete stateMap.users[ userId ];
       console.log( 'user with id: ' + userId + ' disconnected.' );
     });
   });
@@ -58,6 +61,7 @@ addUser = function( socket ) {
   stateMap.userIndex += 1;
 
   stateMap.users[ id ] = {
+    score : 0,
     color : randomColor({
       format     : 'rgbArray',
       luminosity : 'bright'
@@ -91,6 +95,12 @@ onGameTick = function() {
         stateMap.gameState = 'running';
         stateMap.timeLeft  = configMap.roundInterval;
         stateMap.io.emit( 'gameStart', {} );
+
+        Object.keys( stateMap.users ).forEach( function( key ){
+          stateMap.users[ key ].score = 0;
+        });
+
+        stateMap.io.emit( 'scoreUpdate', 0 );
         break;
     }
   }
