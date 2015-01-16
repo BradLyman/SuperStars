@@ -13,8 +13,8 @@ var
   },
 
   configMap = {
-    roundInterval        : 10,
-    intermissionInterval : 5,
+    roundInterval        : 35,
+    intermissionInterval : 15,
     tickInterval         : 100
   },
 

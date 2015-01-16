@@ -210,7 +210,7 @@ var superStars = (function() {
     });
 
     $('.container').append( $('<div class="overlay">').append(
-      $('<div>').append( userList )
+      $('<div>').append( '<h3>Scores</h3>' ).append( userList )
     ));
   };
   // End DOM method /showIntermission/
