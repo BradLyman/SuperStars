@@ -4,7 +4,8 @@ var
   app     = express(),
   http    = require( 'http' ).Server( app ),
   io      = require( 'socket.io' )( http ),
-  port    = process.env.PORT || 8080;
+  port    = process.argv[2] || 8080;
+console.log(port);
 
 app.use( '/', express.static( __dirname ) );
 
