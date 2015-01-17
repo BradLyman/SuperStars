@@ -5,7 +5,7 @@ var
   http       = require( 'http' ).Server( app ),
   io         = require( 'socket.io' )( http ),
   game       = require( path.join( __dirname, 'gameLogic.js' ) ),
-  port       = process.env.PORT || 8080,
+  port       = process.argv[2] || 8080,
   publicDir  = path.join( __dirname, '../public' ),
   clientPath = path.join( __dirname, '../client/index.html' );
 
